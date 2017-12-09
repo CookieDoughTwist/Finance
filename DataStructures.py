@@ -2,6 +2,8 @@
 import sys
 import numpy
 
+
+
 class CircularQueue:
 
     i_0 = 0

@@ -9,8 +9,8 @@ import DataStructures
 
 
 crypto_symbols = ('BTC','ETH','LTC')
-warning_tolerance = (10000,425,90)
-tol_frac = .01
+warning_tolerance = (10000,400,90)
+tol_frac = .009
 frequency = 2500
 duration = 1000
 tol_dict = dict(zip(crypto_symbols,warning_tolerance))
@@ -30,9 +30,9 @@ def main():
         sys.stdout.write("%s     " % datetime.datetime.now())
         for sym in crypto_symbols:         
             url = url_dict[sym]
-            # Query CoinDesk Current price API
-            response = requests.get(url).json()            
+            # Query CoinDesk Current price API                       
             try:
+                response = requests.get(url).json() 
                 price = round(float(response['bid']), 2)                
                 window_dict[sym].push(price)                
                 cur_mean = window_dict[sym].mean()
