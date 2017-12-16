@@ -29,6 +29,10 @@ URL_DICT = {
     "fundamentals": "https://api.robinhood.com/fundamentals/",
 }
 
+class TickerTracker:
+    def __init__(self):
+        pass
+
 class Order:
     def __init__(self,data_dict):
         self.load(data_dict)
@@ -131,11 +135,17 @@ class Robinhood:
         except:
             return None
     
+    def load_trackers(self,target_dict):
+        owned = self.securities_owned()['results']
+        for holding in owned:
+            instrument = self.raise_session(holding['instrument'])
+            print instrument
+    
     def positions(self):
         return self.session.get(self.endpoints['positions']).json()
 
     def securities_owned(self):
-        return self.session.get(URL_DICT['positions']+'?nonzero=true').json()        
+        return self.session.get(URL_DICT['positions']+'?nonzero=true').json()
     
     def portfolios(self,type=None):
         """ type = 'adjusted_equity_previous_close' / 'equity' / 'equity_previous_close' /
@@ -158,8 +168,7 @@ class Robinhood:
             payload['updated_at'] = date # ex: date = '2017-08-15'
         if sym is not None:
             instrument = self.instruments(sym)[0]
-            payload['instrument'] = instrument['url']
-        print payload
+            payload['instrument'] = instrument['url']        
         return self.session.get(URL_DICT['orders'],data=payload).json()
 
     def list_order_ids(self):

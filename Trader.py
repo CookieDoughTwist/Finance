@@ -6,11 +6,6 @@ import Queue
 import DataStructures
 import Robinhood
 
-class TickerTracker:
-    
-    def __init__(self,sym,instrument):
-        self.sym = sym
-        self.instrument = instrument
 
 class RobinhoodTrader:
 
@@ -23,6 +18,7 @@ class RobinhoodTrader:
         self.rb = Robinhood.Robinhood()
         self.login()
         self.trackers = dict()
+        self.session = requests.session()
     
     def login(self):
         f = open(self.login_path,'r')
@@ -32,17 +28,18 @@ class RobinhoodTrader:
         self.active = self.rb.login(us,pw)        
           
     def load(self):
-        results = self.rb.securities_owned()['results']
-        for holding in results:
-            instrument = self.rb.raise_session(holding['instrument'])
-            tracker = TickerTracker(instrument['symbol'],instrument)
-            self.trackers[tracker.sym] = tracker
+        self.rb.load_trackers(self.trackers)
+        #results = self.rb.securities_owned()['results']
+        #for holding in results:
+            #instrument = self.rb.raise_session(holding['instrument'])            
+            #tracker = TickerTracker(instrument['symbol'],instrument)
+            #tracker.load(
+            #self.trackers[tracker.sym] = tracker
         
-    def load_active_orders(self):        
-        orders = self.rb.list_orders()
-        for order in orders:
-            print order.state
-        
+    #def load_active_orders(self):        
+        #orders = self.rb.list_orders()
+        #for order in orders:
+            #print order.state        
             
     def update(self):      
         start = time.time()
@@ -55,8 +52,7 @@ class RobinhoodTrader:
         #print self.rb.order_status(firstorder) #prints "cancelled" etc
         #self.load_active_orders()
         self.load()
-        print self.trackers
-        
+        #print self.trackers
         
         end = time.time()
         sys.stdout.write("Update time: %f\n" % (end - start))
