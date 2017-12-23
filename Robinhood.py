@@ -30,8 +30,11 @@ URL_DICT = {
 }
 
 class TickerTracker:
-    def __init__(self):
-        pass
+    def __init__(self,instrument,url,session):
+        self.instrument = instrument
+        self.url = url;
+        self.session = session
+        self.symbol = instrument['symbol']
 
 class Order:
     def __init__(self,data_dict):
@@ -139,7 +142,9 @@ class Robinhood:
         owned = self.securities_owned()['results']
         for holding in owned:
             instrument = self.raise_session(holding['instrument'])
-            print instrument
+            tracker = TickerTracker(instrument,holding['url'],self.session)
+            tracker.quantity = int(float(holding['quantity']))
+            target_dict[tracker.symbol] = tracker            
     
     def positions(self):
         return self.session.get(self.endpoints['positions']).json()
@@ -256,9 +261,77 @@ class Robinhood:
     def sell(self,sym,quantity):
         instrument = self.instruments(sym)[0]
         return self.place_order(instrument, quantity, 0.0, 'sell')
+
+class RobinhoodFetcher:
+
+    def __init__(self):
+        self.session = requests.session()
         
+    def get_price(self,sym,type='last_trade_price'):
+        """ type = 'last_trade_price' / 'ask_price' / 'bid_price' """
+        url = URL_DICT['quotes'] + sym + '/'
+        try:
+            response = requests.get(url).json()
+            price = round(float(response[type]), 2)
+            return price
+        except:
+            return None
+    
+    def get_historical_prices(self,syms,interval='day'):
+        sym_string = '?symbols=' + syms[0]
+        for idx in range(1,len(syms)):
+            sym_string += ',' + syms[idx]
+        url = URL_DICT['historicals'] + sym_string + '&interval=' + interval        
+        try:
+            response = requests.get(url).json()            
+            return response['results']
+        except:
+            return None
+
+class RobinhoodPlayer:
+
+    data_idx = 0
+    max_size = 0
+
+    def __init__(self,mode='day'):
+        self.mode = mode
+        self.syms = list()
+        self.rbf = RobinhoodFetcher()
+        self.data_bank = dict()
+        
+    def add_syms(self,syms):
+        self.syms += syms
+        self.update_data_bank()
+        
+    def update_data_bank(self):
+        historical_data = self.rbf.get_historical_prices(self.syms)
+        for idx in range(len(self.syms)):
+            sym = self.syms[idx]
+            self.data_bank[sym] = historical_data[idx]
+            # TODO: this is a pretty dumb way to check for max size 12/23/17 -AW
+            self.max_size = len(historical_data[idx]['historicals'])            
+        
+    def poll(self):      
+        if self.data_idx >= self.max_size:
+            print "stop"
+            return None
+        output = [0]*len(self.syms)        
+        for idx in range(len(self.syms)):
+            sym = self.syms[idx]
+            historical = self.data_bank[sym]['historicals'][self.data_idx]                         
+            closing = historical['close_price']
+            output[idx] = float(closing)
+        
+        self.data_idx += 1                
+        return output
+        
+      
+def test_RobinhoodPlayer():
+    rbp = RobinhoodPlayer()
+    rbp.add_syms(['AAPL','TSLA','GE'])
+      
 def main():
-    print "cheese"
+    test_RobinhoodPlayer()
     
 if __name__ == "__main__":
     main()    

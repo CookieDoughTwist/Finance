@@ -24,8 +24,14 @@ class CircularQueue:
     def get(self,idx):
         return self.arr[(self.i_0+idx)%self.n]
     
-    def mean(self):
+    def mean(self):        
         return numpy.sum(self.arr)/float(self.k)        
+    
+    def first(self):
+        return self.arr[self.i_0]
+    
+    def last(self):
+        return self.arr[(self.i_0+self.k-1)%self.n]
     
     def __str__(self):
         out = "n=%d: [" % self.n        
@@ -51,6 +57,9 @@ def main():
     print dm.mean()
     dm.push(6)
     print dm.mean()
+    print dm
+    print dm.first()
+    print dm.last()
 
     
 

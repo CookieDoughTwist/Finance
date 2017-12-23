@@ -10,9 +10,9 @@ import DataStructures
 
 crypto_symbols = ('BTC','ETH','LTC')
 warning_tolerance = (10000,400,90)
-tol_frac = .009
+tol_frac = .012
 frequency = 2500
-duration = 1000
+duration = 100
 tol_dict = dict(zip(crypto_symbols,warning_tolerance))
 sys.stdout.write("%s\n\n" % tol_dict)
 url_dict = dict()
@@ -37,8 +37,15 @@ def main():
                 window_dict[sym].push(price)                
                 cur_mean = window_dict[sym].mean()
                 dev_frac = (price-cur_mean)/cur_mean
-                if price < tol_dict[sym] or dev_frac > tol_frac or dev_frac < -tol_frac:
+                #if price < tol_dict[sym] or dev_frac > tol_frac or dev_frac < -tol_frac:
+                #    winsound.Beep(frequency, duration)
+                if dev_frac > tol_frac:
                     winsound.Beep(frequency, duration)
+                    winsound.Beep(2*frequency, duration)
+                elif dev_frac < -tol_frac:
+                    winsound.Beep(frequency, duration)
+                    winsound.Beep(frequency/2, duration)
+                
             except:
                 price = 0
                 dev_frac = 0
@@ -46,7 +53,7 @@ def main():
             sys.stdout.write("%s: $%.2f" % (sym,price))
             sys.stdout.write("(%.2f%%)" % (dev_frac*100))
             sys.stdout.write(", ")
-        sys.stdout.write("\n");
+        sys.stdout.write("\b\b \n");
         sys.stdout.flush()
 
         time.sleep(10)

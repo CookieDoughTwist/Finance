@@ -3,6 +3,7 @@ import time
 import requests
 import Queue
 
+
 import DataStructures
 import Robinhood
 
@@ -29,12 +30,8 @@ class RobinhoodTrader:
           
     def load(self):
         self.rb.load_trackers(self.trackers)
-        #results = self.rb.securities_owned()['results']
-        #for holding in results:
-            #instrument = self.rb.raise_session(holding['instrument'])            
-            #tracker = TickerTracker(instrument['symbol'],instrument)
-            #tracker.load(
-            #self.trackers[tracker.sym] = tracker
+        for key in self.trackers:            
+            sys.stdout.write("%s: %d\n" % (key,self.trackers[key].quantity))
         
     #def load_active_orders(self):        
         #orders = self.rb.list_orders()
@@ -50,16 +47,74 @@ class RobinhoodTrader:
         #firstorder.id
         #print self.rb.list_order_details()
         #print self.rb.order_status(firstorder) #prints "cancelled" etc
-        #self.load_active_orders()
-        self.load()
+        #self.load_active_orders()        
         #print self.trackers
         
         end = time.time()
         sys.stdout.write("Update time: %f\n" % (end - start))
         sys.stdout.flush()
         
+class Trader:
+    
+    cash = 10000
+    
+    def __init__(self):
+        self.syms = list()
+        self.windows = dict()
+        self.holdings = dict()
+        
+    def assign_data_source(self,data_source):
+        self.data_source = data_source
+        
+    def add_syms(self,syms):
+        self.syms += syms
+        self.data_source.add_syms(syms)
+        for sym in syms:
+            self.windows[sym] = DataStructures.CircularQueue(10)
+            self.holdings[sym] = 0
+    
+    def buy(self,sym,num,price):
+        cost = num*price
+        if cost <= self.cash:
+            self.holdings[sym] += num
+            self.cash -= cost
+        
+    def sell(self,sym,num,price):
+        if self.holdings[sym] >= num:
+            cost = num*price
+            self.cash += cost
+            self.holdings[sym] -= num
 
-def main():
+    #def buy_dollar(self,sym,dollar):
+        
+            
+    def current_value(self):
+        output = self.cash
+        for sym in self.syms:
+            output += self.holdings[sym] * self.windows[sym].last()
+        return output
+    
+    def run(self):        
+        arr = self.data_source.poll()
+        while arr is not None:
+            for idx in range(len(self.syms)):
+                sym = self.syms[idx]
+                self.windows[sym].push(arr[idx])                
+            for sym in self.syms:
+                window = self.windows[sym]
+                mm = window.mean()
+                cur = window.last()
+                frac = (cur-mm)/cur
+                if frac > .01:
+                    self.sell(sym,1,cur)
+                elif frac < -.01:
+                    self.buy(sym,1,cur)
+                
+            arr = self.data_source.poll()
+            print self.current_value()
+        
+    
+def test_RobinhoodTrader():
     sys.stdout.write("Hajimeyou!\n")
     sys.stdout.flush()
     
@@ -68,13 +123,24 @@ def main():
         login_path = sys.argv[1]
     
     td = RobinhoodTrader(login_path)
-    #td.load(['AAPL','TSLA','F'])
+    td.load(['SPY','SPYG','SPYD','SPHD'])
     #td.load_active_orders()
     
     td.update()
     #while True:
         #td.update()
         #time.sleep(td.period)
+    
+def test_Trader():
+    syms = ['AAPL','TSLA']
+    td = Trader()
+    td.assign_data_source(Robinhood.RobinhoodPlayer())
+    td.add_syms(syms)
+    td.run()
+    
+        
+def main():
+    test_Trader()
 
 
 if __name__ == "__main__":
