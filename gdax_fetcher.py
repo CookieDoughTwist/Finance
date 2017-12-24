@@ -11,7 +11,7 @@ import DataStructures
 crypto_symbols = ('BTC','ETH','LTC')
 warning_tolerance = (10000,400,90)
 tol_frac = .012
-frequency = 2500
+frequency = 2000
 duration = 100
 tol_dict = dict(zip(crypto_symbols,warning_tolerance))
 sys.stdout.write("%s\n\n" % tol_dict)

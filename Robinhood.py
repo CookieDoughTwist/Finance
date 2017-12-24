@@ -315,15 +315,18 @@ class RobinhoodPlayer:
         if self.data_idx >= self.max_size:
             print "stop"
             return None
-        output = [0]*len(self.syms)        
+        closings = [0]*len(self.syms)
+        openings = [0]*len(self.syms)
         for idx in range(len(self.syms)):
             sym = self.syms[idx]
-            historical = self.data_bank[sym]['historicals'][self.data_idx]                         
-            closing = historical['close_price']
-            output[idx] = float(closing)
+            #print self.data_idx
+            #print len(self.data_bank[sym]['historicals'])
+            historical = self.data_bank[sym]['historicals'][self.data_idx]                                     
+            closings[idx] = float(historical['close_price'])
+            openings[idx] = float(historical['open_price'])
         
         self.data_idx += 1                
-        return output
+        return (closings,openings)
         
       
 def test_RobinhoodPlayer():

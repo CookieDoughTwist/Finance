@@ -2,11 +2,12 @@ import sys
 import time
 import requests
 import Queue
-
+import winsound
+import numpy as np
 
 import DataStructures
 import Robinhood
-
+import Utilities
 
 class RobinhoodTrader:
 
@@ -53,6 +54,9 @@ class RobinhoodTrader:
         end = time.time()
         sys.stdout.write("Update time: %f\n" % (end - start))
         sys.stdout.flush()
+
+
+
         
 class Trader:
     
@@ -61,6 +65,7 @@ class Trader:
     def __init__(self):
         self.syms = list()
         self.windows = dict()
+        self.windows_open = dict()
         self.holdings = dict()
         
     def assign_data_source(self,data_source):
@@ -70,7 +75,8 @@ class Trader:
         self.syms += syms
         self.data_source.add_syms(syms)
         for sym in syms:
-            self.windows[sym] = DataStructures.CircularQueue(10)
+            self.windows[sym] = DataStructures.CircularQueue(50)
+            self.windows_open[sym] = DataStructures.CircularQueue(10)
             self.holdings[sym] = 0
     
     def buy(self,sym,num,price):
@@ -94,25 +100,80 @@ class Trader:
             output += self.holdings[sym] * self.windows[sym].last()
         return output
     
-    def run(self):        
+    def run(self):
+        start_value = self.cash
+        sys.stdout.write("Starting value: $%.2f\n"%start_value)
         arr = self.data_source.poll()
         while arr is not None:
+            closings = arr[0]
+            openings = arr[1]
             for idx in range(len(self.syms)):
                 sym = self.syms[idx]
-                self.windows[sym].push(arr[idx])                
+                self.windows[sym].push(openings[idx])                
+                self.windows[sym].push(closings[idx])
+                self.windows_open[sym].push(openings[idx])
             for sym in self.syms:
                 window = self.windows[sym]
                 mm = window.mean()
                 cur = window.last()
                 frac = (cur-mm)/cur
-                if frac > .01:
+                if frac > .03:
+                    self.sell(sym,3,cur)
+                elif frac > .02:
+                    self.sell(sym,2,cur)
+                elif frac > .01:
                     self.sell(sym,1,cur)
+                elif frac < -.03:
+                    self.buy(sym,3,cur)
+                elif frac < -.02:
+                    self.buy(sym,2,cur)
                 elif frac < -.01:
                     self.buy(sym,1,cur)
+            #value_ratio = self.current_value()/start_value   
+            #aug_ratio = 2*(value_ratio-1)+value_ratio
+            #winsound.Beep(int(2500*aug_ratio),25)    
                 
             arr = self.data_source.poll()
-            print self.current_value()
+            
+        print self.current_value()
+      
+
+class TickerTracker:
+    
+    def __init__(self):
+        self.SMAs = dict() # simple moving averages
         
+    def initialize_historicals(self,historicals):
+        window_intervals = [5,10,25,50,100]        
+        closings = map(float,historicals['close_price'])        
+        for val in window_intervals:
+            tag = str(val) + 'day'
+            self.SMAs[tag] = np.mean(closings[-val:])        
+      
+class DayTrader():
+    
+    def __init__(self):
+        self.trackers = dict()
+        
+    def set_fetcher(self,fetcher):
+        self.fetcher = fetcher
+        
+    def add_syms(self,syms):
+        wrappers = self.fetcher.get_historical_prices(syms)        
+        for idx in range(len(syms)):
+            sym = syms[idx]                        
+            wrapper = wrappers[idx]
+            historical_array_dict = Utilities.consolidate_dict_array(wrapper['historicals'])
+            tracker = TickerTracker()
+            tracker.initialize_historicals(historical_array_dict)
+            self.trackers[sym] = tracker
+            
+        
+        
+def test_DayTrader():
+    dt = DayTrader()
+    dt.set_fetcher(Robinhood.RobinhoodFetcher())
+    dt.add_syms(['AAPL','TSLA'])
     
 def test_RobinhoodTrader():
     sys.stdout.write("Hajimeyou!\n")
@@ -130,9 +191,11 @@ def test_RobinhoodTrader():
     #while True:
         #td.update()
         #time.sleep(td.period)
+
     
 def test_Trader():
     syms = ['AAPL','TSLA']
+    #syms = ['SPY']
     td = Trader()
     td.assign_data_source(Robinhood.RobinhoodPlayer())
     td.add_syms(syms)
@@ -140,7 +203,7 @@ def test_Trader():
     
         
 def main():
-    test_Trader()
+    test_DayTrader()
 
 
 if __name__ == "__main__":
