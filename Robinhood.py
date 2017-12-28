@@ -283,7 +283,7 @@ class RobinhoodFetcher:
             sym_string += ',' + syms[idx]
         url = URL_DICT['historicals'] + sym_string + '&interval=' + interval        
         try:
-            response = requests.get(url).json()            
+            response = requests.get(url).json()               
             return response['results']
         except:
             return None
@@ -332,6 +332,9 @@ class RobinhoodPlayer:
 def test_RobinhoodPlayer():
     rbp = RobinhoodPlayer()
     rbp.add_syms(['AAPL','TSLA','GE'])
+      
+def save_day_data():
+    rbf = RobinhoodFetcher()
       
 def main():
     test_RobinhoodPlayer()

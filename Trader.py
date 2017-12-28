@@ -84,15 +84,28 @@ class Trader:
         if cost <= self.cash:
             self.holdings[sym] += num
             self.cash -= cost
+            return True
+        return False
         
     def sell(self,sym,num,price):
         if self.holdings[sym] >= num:
             cost = num*price
             self.cash += cost
             self.holdings[sym] -= num
+            return True
+        return False
 
-    #def buy_dollar(self,sym,dollar):
+    def buy_dollar(self,sym,dollars,price):
+        num = int(dollars / price)
+        if num < 1:            
+            return False
+        return self.buy(sym,num,price)
         
+    def sell_dollar(self,sym,dollars,price):
+        num = int(dollars / price)
+        if num < 1:
+            return False
+        return self.sell(sym,num,price)
             
     def current_value(self):
         output = self.cash
@@ -101,42 +114,52 @@ class Trader:
         return output
     
     def run(self):
+        buy_unit = 1000
         start_value = self.cash
         sys.stdout.write("Starting value: $%.2f\n"%start_value)
         arr = self.data_source.poll()
+        n_idx = 0
         while arr is not None:
             closings = arr[0]
             openings = arr[1]
             for idx in range(len(self.syms)):
-                sym = self.syms[idx]
-                self.windows[sym].push(openings[idx])                
+                sym = self.syms[idx]             
                 self.windows[sym].push(closings[idx])
                 self.windows_open[sym].push(openings[idx])
             for sym in self.syms:
                 window = self.windows[sym]
                 mm = window.mean()
-                cur = window.last()
-                frac = (cur-mm)/cur
+                cur_price = window.last()
+                if n_idx == 0:
+                    self.buy_dollar(sym,start_value/2/len(self.syms),cur_price)                    
+                frac = (cur_price-mm)/cur_price
                 if frac > .03:
-                    self.sell(sym,3,cur)
+                    self.sell_dollar(sym,3*buy_unit,cur_price)
                 elif frac > .02:
-                    self.sell(sym,2,cur)
+                    self.sell_dollar(sym,2*buy_unit,cur_price)
                 elif frac > .01:
-                    self.sell(sym,1,cur)
+                    self.sell_dollar(sym,1*buy_unit,cur_price)
                 elif frac < -.03:
-                    self.buy(sym,3,cur)
+                    self.buy_dollar(sym,3*buy_unit,cur_price)
                 elif frac < -.02:
-                    self.buy(sym,2,cur)
+                    self.buy_dollar(sym,2*buy_unit,cur_price)
                 elif frac < -.01:
-                    self.buy(sym,1,cur)
+                    self.buy_dollar(sym,1*buy_unit,cur_price)            
+                
             #value_ratio = self.current_value()/start_value   
             #aug_ratio = 2*(value_ratio-1)+value_ratio
             #winsound.Beep(int(2500*aug_ratio),25)    
-                
+            self.print_portfolio()
             arr = self.data_source.poll()
+            n_idx += 1
             
         print self.current_value()
-      
+        
+    def print_portfolio(self):
+        sys.stdout.write("Value: $%.02f Cash: $%.02f; Holdings: "%(self.current_value(),self.cash))
+        for sym in self.syms:
+            sys.stdout.write("%s(%d), "%(sym,self.holdings[sym]))            
+        sys.stdout.write("\b\b \n")
 
 class TickerTracker:
     
@@ -149,6 +172,9 @@ class TickerTracker:
         for val in window_intervals:
             tag = str(val) + 'day'
             self.SMAs[tag] = np.mean(closings[-val:])        
+            
+    def initialize_daily(self,historicals):
+        print historicals
       
 class DayTrader():
     
@@ -159,13 +185,18 @@ class DayTrader():
         self.fetcher = fetcher
         
     def add_syms(self,syms):
-        wrappers = self.fetcher.get_historical_prices(syms)        
+        h_day = self.fetcher.get_historical_prices(syms,'day')
+        h_5minute = self.fetcher.get_historical_prices(syms,'5minute')
+        #print self.fetcher.get
         for idx in range(len(syms)):
             sym = syms[idx]                        
-            wrapper = wrappers[idx]
-            historical_array_dict = Utilities.consolidate_dict_array(wrapper['historicals'])
+            cur_h_day = h_day[idx]
+            cur_h_5minute = h_5minute[idx]
+            h_day_dict = Utilities.consolidate_dict_array(cur_h_day['historicals'])            
+            h_5minute_dict = Utilities.consolidate_dict_array(cur_h_5minute['historicals'])            
             tracker = TickerTracker()
-            tracker.initialize_historicals(historical_array_dict)
+            tracker.initialize_historicals(h_day_dict)
+            tracker.initialize_daily(h_5minute_dict)
             self.trackers[sym] = tracker
             
         
@@ -203,6 +234,7 @@ def test_Trader():
     
         
 def main():
+    #test_Trader()
     test_DayTrader()
 
 
