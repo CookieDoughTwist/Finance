@@ -10,6 +10,26 @@ HIST_URL = 'https://api.robinhood.com/quotes/historicals/%s/?interval=%s'
 NASDAQ_TRADED_URL = 'ftp.nasdaqtrader.com'
 DATA_DIR = 'C:/Users/Lucy/Documents/Finance/Data/Daily5minute'
 
+class DayPlayer():
+
+    def __init__(self,date):
+        self.date = date
+        self.syms = list()        
+        sefl.data_bank = dict()
+        
+    def add_syms(self,syms):
+        self.syms += syms
+        self.update_data_bank()
+        
+    def update_data_bank(self):
+        historical_data = get_5minute_data(self.syms,self,date)
+        print historical_data
+        
+    def poll(self):
+        pass
+        
+    
+
 def get_5minute_data(syms,date,dir=DATA_DIR):
     historicals = list()
     for sym in syms:
@@ -62,7 +82,7 @@ def save_day_5minute_data(syms,overwrite=False,dir=DATA_DIR):
                 sys.stdout.write("  Overwriting %s...\n"%date_file)
             else:
                 sys.stdout.write("  Overwrite is off. %s will be appended to failures.\n"%sym)
-                #failures.append(sym)
+                failures.append(sym)
                 continue
         url = HIST_URL%(sym,'5minute')            
         try:
@@ -116,7 +136,7 @@ def read_nasdaq():
     
 def main():
     tickers = read_nasdaq()    
-    save_day_5minute_data(tickers,True)
+    save_day_5minute_data(tickers)
     #save_day_5minute_data(['TSLA','MU'],True)
     #get_5minute_data(['AAPL','TSLA','GE','MCHI'],'2017-12-27')
     

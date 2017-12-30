@@ -184,6 +184,9 @@ class DayTrader():
     def set_fetcher(self,fetcher):
         self.fetcher = fetcher
         
+    def set_updater(self,updater):
+        self.updater = updater
+        
     def add_syms(self,syms):
         h_day = self.fetcher.get_historical_prices(syms,'day')
         h_5minute = self.fetcher.get_historical_prices(syms,'5minute')
