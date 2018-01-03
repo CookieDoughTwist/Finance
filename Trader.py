@@ -178,8 +178,9 @@ class TickerTracker:
       
 class DayTrader():
     
-    def __init__(self):
+    def __init__(self,date):
         self.trackers = dict()
+        self.date = date
         
     def set_fetcher(self,fetcher):
         self.fetcher = fetcher
@@ -205,8 +206,9 @@ class DayTrader():
         
         
 def test_DayTrader():
-    dt = DayTrader()
+    dt = DayTrader('2017-12-28')
     dt.set_fetcher(Robinhood.RobinhoodFetcher())
+    dt.set_updater(DataManager.DayPlayer())
     dt.add_syms(['AAPL','TSLA'])
     
 def test_RobinhoodTrader():
