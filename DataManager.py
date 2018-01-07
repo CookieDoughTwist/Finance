@@ -231,28 +231,33 @@ def save_day_data(syms,dir=DATA_DIR):
                 f.write(arr_content)
             continue
         # Process today's data
-        op_idx = arr_content.rfind('{')
-        cb_idx = arr_content.rfind('}',0,-1)                
-        today_entry = arr_content[op_idx:cb_idx+1]
-        date_idx = today_entry.find('begins_at')    
-        today_date = today_entry[date_idx+12:date_idx+22]
+        today_arr = json.loads(arr_content)  
+        today_date = today_arr[-1]['begins_at'][:10]
         # Access stored data
         with open(data_file,'r') as f:        
             file_content = f.read()        
-        op_idx = file_content.rfind('{')
-        cb_idx = file_content.rfind('}',0,-1)        
-        last_entry = file_content[op_idx:cb_idx+1]
-        date_idx = last_entry.find('begins_at')
-        last_date = last_entry[date_idx+12:date_idx+22]
-        if not today_date == last_date:
-            tr_content = file_content[:cb_idx+1]
-            new_content = tr_content+','+today_entry+']'
+        file_arr = json.loads(file_content)
+        last_date = file_arr[-1]['begins_at'][:10]
+        # Loop checks back in time to see if there are missing days
+        # Iterates until we find the entry matching the last day in the database
+        cur_date = today_date
+        data_adds = list()
+        data_idx = 1
+        while not cur_date == last_date:
+            data_idx += 1
+            cur_date = today_arr[-data_idx]['begins_at'][:10]
+        if data_idx > 1:
+            cur_bracket = len(arr_content)-1
+            for r in range(data_idx-1):
+                cur_bracket = arr_content.rfind('{',0,cur_bracket)                
+            new_content = arr_content[cur_bracket:-1]
+            tr_content = file_content[:-1]
+            formed_content = tr_content+','+new_content+']'
             with open(data_file,'w') as f:
-                f.write(new_content)
-        else:
+                f.write(formed_content)
+        else:    
             sys.stdout.write("   %s is already up to date. Skipping...\n"%sym)        
-            failures.append(sym)        
-    
+            failures.append(sym)    
     if len(failures) > 0:
         sys.stdout.write("\nThe following tickers failed to pull:\n ")
         for sym in failures:
@@ -271,7 +276,7 @@ def read_tickers_from_file(ticket_dir='C:/Users/Lucy/Documents/Finance/Data/tick
     
 def daily_routine():
     tickers = read_nasdaq()    
-    #save_day_5minute_data(tickers)
+    save_day_5minute_data(tickers)
     save_day_data(tickers)
     
 def main():    
