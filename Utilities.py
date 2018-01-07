@@ -15,6 +15,9 @@ def consolidate_dict_array(dict_array,keys=None):
             array_dict[key].append(d[key])
     return array_dict
     
+def linear_search_dict_arr(arr,key,key_name):
+    for idx in range(len(arr)):
+        break
 
 def main():
     print "test utilities"

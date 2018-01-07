@@ -161,7 +161,7 @@ class Trader:
             sys.stdout.write("%s(%d), "%(sym,self.holdings[sym]))            
         sys.stdout.write("\b\b \n")
 
-class TickerTracker:
+class DayTickerTracker:
     
     def __init__(self):
         self.SMAs = dict() # simple moving averages
@@ -198,7 +198,7 @@ class DayTrader():
             cur_h_5minute = h_5minute[idx]
             h_day_dict = Utilities.consolidate_dict_array(cur_h_day['historicals'])            
             h_5minute_dict = Utilities.consolidate_dict_array(cur_h_5minute['historicals'])            
-            tracker = TickerTracker()
+            tracker = DayTickerTracker()
             tracker.initialize_historicals(h_day_dict)
             tracker.initialize_daily(h_5minute_dict)
             self.trackers[sym] = tracker
