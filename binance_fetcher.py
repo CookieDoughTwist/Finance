@@ -1,8 +1,9 @@
-from binance.client import Client
+
 import time
 import datetime
 import winsound
 import sys
+import requests
 import DataStructures
 
 tol_frac = .012
@@ -12,6 +13,8 @@ duration = 100
 tickers = ['BTCUSDT','XRPBTC','IOTABTC','DASHBTC','XMRBTC']
 ticker_idx = [0]*len(tickers)
 window_dict = dict()
+
+uri = 'https://api.binance.com/api/v1/ticker/allPrices'
 
 for sym in tickers:
     window_dict[sym] = DataStructures.CircularQueue(60)
@@ -23,21 +26,21 @@ def main():
     else:
         show_usd = sys.argv[1]
 
-    client = Client()
-    price_array = client.get_all_tickers()
+    price_array = requests.get(uri).json()    
+    
     for idx in range(len(price_array)):
-        cur_price = price_array[idx]
+        cur_price = price_array[idx]      
         for tt in range(len(tickers)):        
             if cur_price['symbol'] == tickers[tt]:
                 ticker_idx[tt] = idx
                 break
                 
-    btc_price = price_array[ticker_idx[0]]['price']    
-                
+    btc_price = price_array[ticker_idx[0]]['price']   
+
     while True:        
         sys.stdout.write("%s - " % datetime.datetime.now())        
         try:
-            price_array = client.get_all_tickers()
+            price_array = requests.get(uri).json()
         except:
             continue        
         for tt in range(len(tickers)):      
@@ -51,10 +54,14 @@ def main():
                 if not sym == 'BTCUSDT':
                     if dev_frac > tol_frac:
                         winsound.Beep(frequency, duration)
-                        winsound.Beep(2*frequency, duration)
+                        winsound.Beep(3*frequency/2, duration)
+                        if dev_frac > 2*tol_frac:
+                            winsound.Beep(2*frequency, duration)
                     elif dev_frac < -tol_frac:
                         winsound.Beep(frequency, duration)
-                        winsound.Beep(frequency/2, duration)
+                        winsound.Beep(2*frequency/3, duration)
+                        if dev_frac < -2*tol_frac:
+                            winsound.Beep(frequency/2, duration)
             except:
                 price = 0
                 dev_frac = 0
