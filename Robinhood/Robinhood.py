@@ -181,18 +181,21 @@ class Robinhood:
                     trigger='immediate',order='market',time_in_force = 'gfd'):        
         """ Place an order with Robinhood """
         if not bid_price:
-            bid_price = self.get_price(instrument['symbol'],'bid_price')        
+            bid_price = self.get_price(instrument['symbol'],'bid_price')      
         payload = {
             'account': self.get_account()['url'],
             'instrument': instrument['url'],
-            'price': float(bid_price),
             'quantity': quantity,
             'side': transaction,
             'symbol': instrument['symbol'],
             'time_in_force': time_in_force.lower(),
             'trigger': trigger,
-            'type': order.lower()
+            'type': order.lower()            
         }
+        if trigger == 'stop':
+            payload['stop_price'] = float(bid_price)
+        else:
+            payload['price'] = float(bid_price)
         res = self.session.post(URL_DICT['orders'],data=payload)
         res.raise_for_status()                          
         return res
@@ -213,6 +216,10 @@ class Robinhood:
         instrument = self.instruments(sym)[0]
         return self.place_order(instrument, quantity, 0.0, 'sell')
       
+    def stop_loss(self,sym,quantity=1,bid_price=0.0):
+        instrument = self.instruments(sym)[0]
+        return self.place_order(instrument, quantity, bid_price, 'sell', 'stop', 'market')                
+      
     def print_positions(self):
         pos = self.positions()
         next = pos['next']
@@ -221,7 +228,11 @@ class Robinhood:
             return
         results = pos['results']
         for res in results:
-            print res['quantity']
+            quantity = float(res['quantity'])
+            if quantity > 0:            
+                symbol = self.session.get(res['instrument']).json()['symbol']
+                sys.stdout.write("%s: %d\n" % (symbol,quantity))
+    
     
       
     """
