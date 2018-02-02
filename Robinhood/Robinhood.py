@@ -100,9 +100,7 @@ class Robinhood:
         res.raise_for_status()  #will throw without auth
         data = res.json()
         return data
-        
-    
-    
+                
     def positions(self):
         return self.session.get(URL_DICT['positions']).json()
 
@@ -214,6 +212,17 @@ class Robinhood:
     def sell(self,sym,quantity):
         instrument = self.instruments(sym)[0]
         return self.place_order(instrument, quantity, 0.0, 'sell')
+      
+    def print_positions(self):
+        pos = self.positions()
+        next = pos['next']
+        if next is not None:
+            sys.stdout.write("Next has something!\n")
+            return
+        results = pos['results']
+        for res in results:
+            print res['quantity']
+    
       
     """
     Functions that do not require a logged in session.
