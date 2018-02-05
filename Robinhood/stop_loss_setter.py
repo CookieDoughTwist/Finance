@@ -1,4 +1,5 @@
 import Robinhood
+import time
 
 def set_dynamic_stop_losses(rh,tickers=None):
     if tickers is None:
@@ -6,14 +7,20 @@ def set_dynamic_stop_losses(rh,tickers=None):
         return
     rl = Robinhood.Robinhood() # Local robinhood for data access
     #rh.print_positions()
-    rh.stop_loss('UPRO',1,0)
-    rh.limit_sell('UPRO',1,200)
+    #a = rh.stop_loss('UPRO',1,0).json()
+    #print a['id']
+    #rh.limit_sell('UPRO',1,200)
+    #time.sleep(1)
+    #rh.cancel_order(a['id'])
+    #rh.print_open_orders()
+    for ticker in tickers:
+        print ticker
     
 
 def main():
     rh = Robinhood.Robinhood()
-    #rh.login('C:/Users/Lucy/Documents/use_pw.txt')
-    rh.login('C:/Users/Derek/OneDrive/Documents/use_pw.txt')
+    rh.login('C:/Users/Lucy/Documents/use_pw.txt')
+    #rh.login('C:/Users/Derek/OneDrive/Documents/use_pw.txt')
     leveraged_tickers = ['SPXL','TQQQ',
     'SOXL','UPRO','KORU','FAS','YINN',
     'CWEB','EDC']

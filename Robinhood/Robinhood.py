@@ -139,13 +139,6 @@ class Robinhood:
         else:
             raise Exception("Could not retrieve orders: " + res.text)
     
-    def list_orders(self):
-        order_ids = self.list_order_ids()
-        order_list = list()
-        for order_id in order_ids:
-            order_list.append(Order(self.order_details(order_id)))
-        return order_list
-    
     def order_details(self, order_ID):
         ''' Returns an order object which contains information about an order 
         and its status'''
@@ -218,8 +211,7 @@ class Robinhood:
       
     def stop_loss(self,sym,quantity=1,bid_price=0.0):
         instrument = self.instruments(sym)[0]
-        return self.place_order(instrument, quantity, bid_price, 'sell', 'stop', 'market')                
-      
+        return self.place_order(instrument, quantity, bid_price, 'sell', 'stop', 'market')                     
     def print_positions(self):
         pos = self.positions()
         next = pos['next']
@@ -233,7 +225,14 @@ class Robinhood:
                 symbol = self.session.get(res['instrument']).json()['symbol']
                 sys.stdout.write("%s: %d\n" % (symbol,quantity))
     
-    
+    def print_open_orders(self):
+        ids = self.list_order_ids()
+        for id in ids:
+            order = self.order_details(id)
+            if order['state'] == 'queued':
+                sym = self.session.get(order['instrument']).json()['symbol']
+                print sym
+                print order
       
     """
     Functions that do not require a logged in session.
