@@ -13,14 +13,21 @@ def set_dynamic_stop_losses(rh,tickers=None):
     #time.sleep(1)
     #rh.cancel_order(a['id'])
     #rh.print_open_orders()
+    
+    #rh.cancel_stop_orders()
+    days = [2,7,20]
     for ticker in tickers:
         print ticker
-    
+        h_struct = rl.get_historical(ticker,'day')
+        historicals = h_struct['historicals']
+        print historicals[0]
+        break
 
+    
 def main():
     rh = Robinhood.Robinhood()
-    rh.login('C:/Users/Lucy/Documents/use_pw.txt')
-    #rh.login('C:/Users/Derek/OneDrive/Documents/use_pw.txt')
+    #rh.login('C:/Users/Lucy/Documents/use_pw.txt')
+    rh.login('C:/Users/Derek/OneDrive/Documents/use_pw.txt')
     leveraged_tickers = ['SPXL','TQQQ',
     'SOXL','UPRO','KORU','FAS','YINN',
     'CWEB','EDC']

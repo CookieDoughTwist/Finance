@@ -170,6 +170,16 @@ class Robinhood:
         else:
             raise Exception("Could not cancel order: " + res.text)
     
+    def cancel_stop_orders(self):
+        """ Clears all stop orders 
+            TODO: Doesn't work if more than 100 orders back"""
+        ids = self.list_order_ids()
+        for id in ids:
+            order = self.order_details(id)
+            if order['state'] == 'queued' and order['trigger'] == 'stop':
+                self.cancel_order(id)
+        
+    
     def place_order(self,instrument,quantity=1,bid_price=0.0,transaction=None,
                     trigger='immediate',order='market',time_in_force = 'gfd'):        
         """ Place an order with Robinhood """
@@ -212,6 +222,7 @@ class Robinhood:
     def stop_loss(self,sym,quantity=1,bid_price=0.0):
         instrument = self.instruments(sym)[0]
         return self.place_order(instrument, quantity, bid_price, 'sell', 'stop', 'market')                     
+        
     def print_positions(self):
         pos = self.positions()
         next = pos['next']
@@ -258,6 +269,13 @@ class Robinhood:
         except:
             return None  
     
+    def get_historical(self,sym,interval='day'):
+        url = URL_DICT['historicals'] + sym + '/' + '?interval=' + interval
+        try:
+            response = requests.get(url).json()
+            return response
+        except:
+            return None
       
 def main():
     print "cheese"
