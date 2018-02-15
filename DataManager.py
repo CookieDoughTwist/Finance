@@ -223,6 +223,10 @@ def save_day_data(syms,dir=DATA_DIR):
             failures.append(sym)
             continue
         start_idx = content.find('[{')
+        if start_idx < 0:
+            # Invalid pull
+            failures.append(sym)
+            continue
         arr_content = content[start_idx:-1]        
         
         if not os.path.isfile(data_file):
@@ -230,13 +234,20 @@ def save_day_data(syms,dir=DATA_DIR):
             with open(data_file,'w') as f:
                 f.write(arr_content)
             continue
-        # Process today's data
+        # Process today's data        
         today_arr = json.loads(arr_content)  
         today_date = today_arr[-1]['begins_at'][:10]
         # Access stored data
         with open(data_file,'r') as f:        
-            file_content = f.read()        
-        file_arr = json.loads(file_content)
+            file_content = f.read()            
+        try:
+            file_arr = json.loads(file_content)
+        except:
+            sys.stdout.write("  JSON failed to read... Dumping file content and continuing.\n")
+            with open(data_file,'w') as f:
+                f.write(arr_content)
+            failures.append(sym)
+            continue
         last_date = file_arr[-1]['begins_at'][:10]
         # Loop checks back in time to see if there are missing days
         # Iterates until we find the entry matching the last day in the database
@@ -257,7 +268,7 @@ def save_day_data(syms,dir=DATA_DIR):
                 f.write(formed_content)
         else:    
             sys.stdout.write("   %s is already up to date. Skipping...\n"%sym)        
-            failures.append(sym)    
+            #failures.append(sym)    
     if len(failures) > 0:
         sys.stdout.write("\nThe following tickers failed to pull:\n ")
         for sym in failures:
@@ -277,7 +288,7 @@ def read_tickers_from_file(ticket_dir='C:/Users/Lucy/Documents/Finance/Data/tick
 def daily_routine():
     tickers = read_nasdaq()    
     save_day_5minute_data(tickers)
-    save_day_data(tickers)
+    #save_day_data(tickers)
     
 def main():    
     daily_routine()
