@@ -200,6 +200,7 @@ def save_day_5minute_data(syms,overwrite=False,dir=DATA_DIR):
     else:    
         sys.stdout.write("\nData pull and storage successful!\n")
     sys.stdout.write(" Total execution time: %s\n"%(str(time.clock()-t_start)))
+    sys.stdout.write(" Timestamp: %s\n"%(time.asctime( time.localtime(time.time()) )))
 
 def save_day_data(syms,dir=DATA_DIR):
     t_start = time.clock()
